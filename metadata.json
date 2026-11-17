@@ -1,0 +1,8 @@
+{
+  "name": "ASSET HUB",
+  "description": "Premium digital asset library for uncompressed motion graphics, green screen plates, transparent PNGs, overlays, transitions, infographics, sound effects, and backgrounds.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

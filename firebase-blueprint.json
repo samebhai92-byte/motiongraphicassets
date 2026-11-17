@@ -1,0 +1,397 @@
+{
+  "entities": {
+    "Category": {
+      "title": "Category",
+      "description": "Digital asset category for organizing the ASSET HUB library.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Display name of the category",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "slug": {
+          "type": "string",
+          "description": "URL-safe lowercase slug",
+          "minLength": 1,
+          "maxLength": 80,
+          "pattern": "^[a-z0-9\\-]+$"
+        },
+        "description": {
+          "type": "string",
+          "description": "Short category description",
+          "maxLength": 300
+        },
+        "sortOrder": {
+          "type": "number",
+          "description": "Numeric display order"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp"
+        }
+      },
+      "required": ["name", "slug", "description", "sortOrder", "createdAt", "updatedAt"]
+    },
+    "Asset": {
+      "title": "Asset",
+      "description": "Public metadata record for a digital asset stored separately from original files.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Asset title",
+          "minLength": 1,
+          "maxLength": 140
+        },
+        "slug": {
+          "type": "string",
+          "description": "URL-safe asset slug",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "^[a-z0-9\\-]+$"
+        },
+        "description": {
+          "type": "string",
+          "description": "Asset details and usage notes",
+          "maxLength": 2000
+        },
+        "categoryId": {
+          "type": "string",
+          "description": "Referenced category document ID",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "categoryName": {
+          "type": "string",
+          "description": "Denormalized category display name",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "tags": {
+          "type": "array",
+          "description": "Up to 15 searchable tags"
+        },
+        "tier": {
+          "type": "string",
+          "enum": ["free", "premium"],
+          "description": "Access tier label"
+        },
+        "fileFormat": {
+          "type": "string",
+          "description": "Original file extension/format (e.g. MOV, PNG, WAV)",
+          "minLength": 1,
+          "maxLength": 20
+        },
+        "resolution": {
+          "type": "string",
+          "description": "Dimensions or audio specification (e.g. 3840x2160)",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "fileSizeBytes": {
+          "type": "number",
+          "description": "Exact byte size of the unmodified original file"
+        },
+        "originalFileName": {
+          "type": "string",
+          "description": "Original uploaded filename",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "mimeType": {
+          "type": "string",
+          "description": "Original MIME type",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "thumbnailUrl": {
+          "type": "string",
+          "description": "Optional preview thumbnail URL",
+          "maxLength": 500
+        },
+        "previewMediaType": {
+          "type": "string",
+          "enum": ["image", "video", "audio"],
+          "description": "Preview renderer type"
+        },
+        "previewMediaUrl": {
+          "type": "string",
+          "description": "Optional preview media URL",
+          "maxLength": 500
+        },
+        "downloadsCount": {
+          "type": "number",
+          "description": "Total downloads counter"
+        },
+        "published": {
+          "type": "boolean",
+          "description": "Whether asset is visible on the public website"
+        },
+        "authorUid": {
+          "type": "string",
+          "description": "Administrator UID who uploaded the asset",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation server timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Update server timestamp"
+        }
+      },
+      "required": [
+        "title",
+        "slug",
+        "description",
+        "categoryId",
+        "categoryName",
+        "tags",
+        "tier",
+        "fileFormat",
+        "resolution",
+        "fileSizeBytes",
+        "originalFileName",
+        "mimeType",
+        "thumbnailUrl",
+        "previewMediaType",
+        "previewMediaUrl",
+        "downloadsCount",
+        "published",
+        "authorUid",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AssetSource": {
+      "title": "AssetSource",
+      "description": "Private storage pointer and integrity metadata kept strictly separate from public asset records.",
+      "type": "object",
+      "properties": {
+        "assetId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "storageKey": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "tier": {
+          "type": "string",
+          "enum": ["free", "premium"]
+        },
+        "sha256": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["assetId", "storageKey", "tier", "sha256", "createdAt", "updatedAt"]
+    },
+    "PremiumGrant": {
+      "title": "PremiumGrant",
+      "description": "Server-verified entitlement allowing authorized users or access codes to generate temporary premium download links.",
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "grantType": {
+          "type": "string",
+          "enum": ["email", "code"]
+        },
+        "granteeEmail": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "accessCodeHash": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "expiresAtIso": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "createdByUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "label",
+        "grantType",
+        "granteeEmail",
+        "accessCodeHash",
+        "active",
+        "expiresAtIso",
+        "createdByUid",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PaymentSettings": {
+      "title": "PaymentSettings",
+      "description": "Publicly readable subscription price, custom UPI ID, and QR code URL configured by the administrator.",
+      "type": "object",
+      "properties": {
+        "priceInr": {
+          "type": "number"
+        },
+        "upiId": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "qrCodeUrl": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "updatedByUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["priceInr", "upiId", "qrCodeUrl", "updatedByUid", "updatedAt"]
+    },
+    "PaymentRequest": {
+      "title": "PaymentRequest",
+      "description": "User-submitted UPI UTR payment verification request for activating the ₹99 Premium subscription.",
+      "type": "object",
+      "properties": {
+        "userUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "userEmail": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 200
+        },
+        "userName": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "amountInr": {
+          "type": "number"
+        },
+        "utrNumber": {
+          "type": "string",
+          "minLength": 6,
+          "maxLength": 60,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "approved", "rejected"]
+        },
+        "adminNote": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userUid",
+        "userEmail",
+        "userName",
+        "amountInr",
+        "utrNumber",
+        "status",
+        "adminNote",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "HealthCheck": {
+      "title": "HealthCheck",
+      "description": "Read-only connection verification document.",
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "maxLength": 40
+        }
+      }
+    }
+  },
+  "firestore": {
+    "/categories/{categoryId}": {
+      "schema": { "$ref": "#/entities/Category" },
+      "description": "Publicly readable digital asset categories managed strictly by the single configured administrator."
+    },
+    "/assets/{assetId}": {
+      "schema": { "$ref": "#/entities/Asset" },
+      "description": "Digital asset metadata documents. Public reads allowed only when published == true; writes restricted to admin."
+    },
+    "/asset_sources/{assetId}": {
+      "schema": { "$ref": "#/entities/AssetSource" },
+      "description": "Admin-only private storage pointer and integrity checksums for original files."
+    },
+    "/premium_grants/{grantId}": {
+      "schema": { "$ref": "#/entities/PremiumGrant" },
+      "description": "Premium access grants. Strictly isolated to admin or the specific verified email grantee."
+    },
+    "/app_settings/{settingId}": {
+      "schema": { "$ref": "#/entities/PaymentSettings" },
+      "description": "Publicly readable payment & subscription config (₹99, UPI ID, QR Code) writable only by the administrator."
+    },
+    "/payment_requests/{requestId}": {
+      "schema": { "$ref": "#/entities/PaymentRequest" },
+      "description": "UPI UTR payment verification requests submitted by verified users and reviewed only by the administrator."
+    },
+    "/test/{docId}": {
+      "schema": { "$ref": "#/entities/HealthCheck" },
+      "description": "Startup connection validation path."
+    }
+  }
+}

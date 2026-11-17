@@ -1,0 +1,284 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Primitives ---
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isVerifiedUser() && request.auth.token.email == 'sameeransari89368165@gmail.com';
+    }
+
+    // --- Validation Blueprints ---
+    function isValidCategory(data) {
+      return data.keys().hasAll(['name', 'slug', 'description', 'sortOrder', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['name', 'slug', 'description', 'sortOrder', 'createdAt', 'updatedAt'])
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 80
+        && data.slug is string && data.slug.size() >= 1 && data.slug.size() <= 80 && data.slug.matches('^[a-z0-9\\-]+$')
+        && data.description is string && data.description.size() <= 300
+        && data.sortOrder is number && data.sortOrder >= 0 && data.sortOrder <= 10000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAsset(data) {
+      return data.keys().hasAll([
+          'title', 'slug', 'description', 'categoryId', 'categoryName',
+          'tags', 'tier', 'fileFormat', 'resolution', 'fileSizeBytes',
+          'originalFileName', 'mimeType', 'thumbnailUrl', 'previewMediaType',
+          'previewMediaUrl', 'downloadsCount', 'published', 'authorUid',
+          'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'title', 'slug', 'description', 'categoryId', 'categoryName',
+          'tags', 'tier', 'fileFormat', 'resolution', 'fileSizeBytes',
+          'originalFileName', 'mimeType', 'thumbnailUrl', 'previewMediaType',
+          'previewMediaUrl', 'downloadsCount', 'published', 'authorUid',
+          'createdAt', 'updatedAt'
+        ])
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 140
+        && data.slug is string && data.slug.size() >= 1 && data.slug.size() <= 160 && data.slug.matches('^[a-z0-9\\-]+$')
+        && data.description is string && data.description.size() <= 2000
+        && isValidId(data.categoryId)
+        && data.categoryName is string && data.categoryName.size() >= 1 && data.categoryName.size() <= 80
+        && data.tags is list && data.tags.size() <= 15 && (data.tags.size() == 0 || (data.tags[0] is string && data.tags[0].size() <= 40))
+        && data.tier in ['free', 'premium']
+        && data.fileFormat is string && data.fileFormat.size() >= 1 && data.fileFormat.size() <= 20
+        && data.resolution is string && data.resolution.size() >= 1 && data.resolution.size() <= 60
+        && data.fileSizeBytes is number && data.fileSizeBytes >= 0 && data.fileSizeBytes <= 10737418240
+        && data.originalFileName is string && data.originalFileName.size() >= 1 && data.originalFileName.size() <= 255
+        && data.mimeType is string && data.mimeType.size() >= 1 && data.mimeType.size() <= 120
+        && data.thumbnailUrl is string && data.thumbnailUrl.size() <= 500
+        && data.previewMediaType in ['image', 'video', 'audio']
+        && data.previewMediaUrl is string && data.previewMediaUrl.size() <= 500
+        && data.downloadsCount is number && data.downloadsCount >= 0
+        && data.published is bool
+        && data.authorUid is string && data.authorUid.size() >= 1 && data.authorUid.size() <= 128
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAssetSource(data) {
+      return data.keys().hasAll(['assetId', 'storageKey', 'tier', 'sha256', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['assetId', 'storageKey', 'tier', 'sha256', 'createdAt', 'updatedAt'])
+        && isValidId(data.assetId)
+        && data.storageKey is string && data.storageKey.size() >= 1 && data.storageKey.size() <= 300
+        && data.tier in ['free', 'premium']
+        && data.sha256 is string && data.sha256.size() >= 1 && data.sha256.size() <= 128
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidPremiumGrant(data) {
+      return data.keys().hasAll([
+          'label', 'grantType', 'granteeEmail', 'accessCodeHash',
+          'active', 'expiresAtIso', 'createdByUid', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'label', 'grantType', 'granteeEmail', 'accessCodeHash',
+          'active', 'expiresAtIso', 'createdByUid', 'createdAt', 'updatedAt'
+        ])
+        && data.label is string && data.label.size() >= 1 && data.label.size() <= 100
+        && data.grantType in ['email', 'code']
+        && data.granteeEmail is string && data.granteeEmail.size() <= 200
+        && data.accessCodeHash is string && data.accessCodeHash.size() <= 128
+        && data.active is bool
+        && data.expiresAtIso is string && data.expiresAtIso.size() <= 40
+        && data.createdByUid is string && data.createdByUid.size() >= 1 && data.createdByUid.size() <= 128
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidPaymentSettings(data) {
+      return data.keys().hasAll(['priceInr', 'upiId', 'qrCodeUrl', 'updatedByUid', 'updatedAt'])
+        && data.keys().hasOnly(['priceInr', 'upiId', 'qrCodeUrl', 'updatedByUid', 'updatedAt'])
+        && data.priceInr is number && data.priceInr >= 1 && data.priceInr <= 100000
+        && data.upiId is string && data.upiId.size() <= 120
+        && data.qrCodeUrl is string && data.qrCodeUrl.size() <= 500
+        && data.updatedByUid is string && data.updatedByUid.size() >= 1 && data.updatedByUid.size() <= 128
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidPaymentRequest(data) {
+      return data.keys().hasAll([
+          'userUid', 'userEmail', 'userName', 'amountInr',
+          'utrNumber', 'status', 'adminNote', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'userUid', 'userEmail', 'userName', 'amountInr',
+          'utrNumber', 'status', 'adminNote', 'createdAt', 'updatedAt'
+        ])
+        && data.userUid is string && data.userUid.size() >= 1 && data.userUid.size() <= 128
+        && data.userEmail is string && data.userEmail.size() >= 3 && data.userEmail.size() <= 200
+        && data.userName is string && data.userName.size() <= 120
+        && data.amountInr is number && data.amountInr >= 1 && data.amountInr <= 100000
+        && data.utrNumber is string && data.utrNumber.size() >= 6 && data.utrNumber.size() <= 60 && data.utrNumber.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.status in ['pending', 'approved', 'rejected']
+        && data.adminNote is string && data.adminNote.size() <= 300
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // --- Collection Rules ---
+    match /test/{docId} {
+      allow get: if docId == 'connection';
+    }
+
+    match /categories/{categoryId} {
+      allow get: if isValidId(categoryId);
+      allow list: if true;
+      allow create: if isAdmin()
+        && isValidId(categoryId)
+        && isValidCategory(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isAdmin()
+        && isValidId(categoryId)
+        && isValidCategory(incoming())
+        && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'slug', 'description', 'sortOrder', 'updatedAt'])
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time;
+      allow delete: if isAdmin() && isValidId(categoryId);
+    }
+
+    match /assets/{assetId} {
+      allow get: if isValidId(assetId) && (existing().published == true || isAdmin());
+      allow list: if resource.data.published == true || isAdmin();
+      allow create: if isAdmin()
+        && isValidId(assetId)
+        && isValidAsset(incoming())
+        && incoming().authorUid == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && exists(/databases/$(database)/documents/categories/$(incoming().categoryId));
+      allow update: if isAdmin()
+        && isValidId(assetId)
+        && isValidAsset(incoming())
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'title', 'slug', 'description', 'categoryId', 'categoryName',
+          'tags', 'tier', 'fileFormat', 'resolution', 'fileSizeBytes',
+          'originalFileName', 'mimeType', 'thumbnailUrl', 'previewMediaType',
+          'previewMediaUrl', 'downloadsCount', 'published', 'updatedAt'
+        ])
+        && incoming().authorUid == existing().authorUid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && exists(/databases/$(database)/documents/categories/$(incoming().categoryId));
+      allow delete: if isAdmin() && isValidId(assetId);
+    }
+
+    match /asset_sources/{assetId} {
+      allow get: if isAdmin() && isValidId(assetId);
+      allow list: if isAdmin();
+      allow create: if isAdmin()
+        && isValidId(assetId)
+        && isValidAssetSource(incoming())
+        && incoming().assetId == assetId
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && exists(/databases/$(database)/documents/assets/$(assetId));
+      allow update: if isAdmin()
+        && isValidId(assetId)
+        && isValidAssetSource(incoming())
+        && incoming().diff(existing()).affectedKeys().hasOnly(['storageKey', 'tier', 'sha256', 'updatedAt'])
+        && incoming().assetId == existing().assetId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time;
+      allow delete: if isAdmin() && isValidId(assetId);
+    }
+
+    match /premium_grants/{grantId} {
+      allow get: if isValidId(grantId) && (
+        isAdmin() ||
+        (isVerifiedUser() && existing().grantType == 'email' && existing().granteeEmail == request.auth.token.email)
+      );
+      allow list: if isAdmin() || (
+        isVerifiedUser() && resource.data.grantType == 'email' && resource.data.granteeEmail == request.auth.token.email
+      );
+      allow create: if isAdmin()
+        && isValidId(grantId)
+        && isValidPremiumGrant(incoming())
+        && incoming().createdByUid == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isAdmin()
+        && isValidId(grantId)
+        && isValidPremiumGrant(incoming())
+        && incoming().diff(existing()).affectedKeys().hasOnly(['label', 'grantType', 'granteeEmail', 'accessCodeHash', 'active', 'expiresAtIso', 'updatedAt'])
+        && incoming().createdByUid == existing().createdByUid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time;
+      allow delete: if isAdmin() && isValidId(grantId);
+    }
+
+    match /app_settings/{settingId} {
+      allow get: if isValidId(settingId) && settingId == 'payment';
+      allow create: if isAdmin()
+        && isValidId(settingId)
+        && settingId == 'payment'
+        && isValidPaymentSettings(incoming())
+        && incoming().updatedByUid == request.auth.uid
+        && incoming().updatedAt == request.time;
+      allow update: if isAdmin()
+        && isValidId(settingId)
+        && settingId == 'payment'
+        && isValidPaymentSettings(incoming())
+        && incoming().diff(existing()).affectedKeys().hasOnly(['priceInr', 'upiId', 'qrCodeUrl', 'updatedByUid', 'updatedAt'])
+        && incoming().updatedByUid == request.auth.uid
+        && incoming().updatedAt == request.time;
+      allow delete: if isAdmin() && isValidId(settingId);
+    }
+
+    match /payment_requests/{requestId} {
+      allow get: if isValidId(requestId) && (
+        isAdmin() ||
+        (isVerifiedUser() && existing().userUid == request.auth.uid)
+      );
+      allow list: if isAdmin() || (
+        isVerifiedUser() && resource.data.userUid == request.auth.uid
+      );
+      allow create: if isVerifiedUser()
+        && isValidId(requestId)
+        && isValidPaymentRequest(incoming())
+        && incoming().userUid == request.auth.uid
+        && incoming().userEmail == request.auth.token.email
+        && incoming().status == 'pending'
+        && incoming().adminNote == ''
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isAdmin()
+        && isValidId(requestId)
+        && isValidPaymentRequest(incoming())
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'adminNote', 'updatedAt'])
+        && incoming().userUid == existing().userUid
+        && incoming().userEmail == existing().userEmail
+        && incoming().utrNumber == existing().utrNumber
+        && incoming().amountInr == existing().amountInr
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time;
+      allow delete: if isAdmin() && isValidId(requestId);
+    }
+  }
+}
